@@ -88,3 +88,26 @@ axs[1].plot(data['Number_SKU_Sold'])
   
 plt.show() 
 
+
+### Missing Date Values in Data
+print(data['Date'].min(), data['Date'].max())
+
+print('Total days between 01-jan-07 to 24-Dec-08:', (data['Date'].max() - data['Date'].min()).days)
+print('Number of rows present in the data are:', data.shape[0])
+
+print(pd.date_range(start = '2007-01-01', end = '2008-12-24' ).difference(data.index))
+
+'''
+- There are 137 days missing over the span of two years. 
+- Are these weekends? Or Holidays? 
+- Are these days missing at random?
+'''
+
+start_date = '2007-01-01'
+end_date = '2008-12-24'
+
+missing_dates = pd.DataFrame(data = pd.date_range(start = start_date, end = end_date).difference(data.index), 
+                             columns= ['Date'])
+
+print(missing_dates)
+
