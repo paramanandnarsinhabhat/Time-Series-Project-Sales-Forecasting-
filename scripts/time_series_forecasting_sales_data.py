@@ -238,3 +238,53 @@ plt.show()
 - Average sales are higher towards the end of the year
 '''
 
+# 5. Holdout Validation
+print(data_.head())
+
+plt.figure(figsize=(12,8))
+
+plt.plot(data_.index, data_['Number_SKU_Sold'], label = 'Data')
+plt.legend(loc='best')
+plt.show()
+
+#Divide into train and validation sets
+
+train_data = data_[:469]
+valid_data = data_[469:]
+
+valid_data.tail()
+
+plt.figure(figsize=(12,8))
+
+plt.plot(train_data.index, train_data['Number_SKU_Sold'], label='Train')
+plt.plot(valid_data.index, valid_data['Number_SKU_Sold'], label='Validation')
+plt.legend(loc='best')
+plt.show()
+
+def rmsle(actual, preds):
+    for i in range(0,len(preds)):
+        if preds[i]<0:
+            preds[i] = 0
+        else:
+            pass
+    
+    error = (sqrt(mean_squared_log_error(actual, preds)))*100
+    return error
+
+## 6. Time Series Forecasting Models
+### Holt's Winters (aka triple enponential smoothing)
+#importing module
+from statsmodels.tsa.api import ExponentialSmoothing
+#training the model
+model = ExponentialSmoothing(np.asarray(train_data['Number_SKU_Sold']), seasonal_periods=6, trend='add', seasonal='add')
+model = model.fit(smoothing_level=0.2, smoothing_slope=0.001, smoothing_seasonal=0.2)
+    
+# predictions and evaluation
+preds = model.forecast(len(valid_data)) 
+score = rmsle(valid_data['Number_SKU_Sold'], preds)
+
+# results
+print('RMSLE for Holt Winter is:', score)
+
+
+
