@@ -111,3 +111,60 @@ missing_dates = pd.DataFrame(data = pd.date_range(start = start_date, end = end_
 
 print(missing_dates)
 
+#Extract day, month, and year from misssing_dates
+missing_dates['Day'] = missing_dates['Date'].dt.strftime("%A")
+missing_dates['Month'] = missing_dates['Date'].dt.month
+missing_dates['year'] = missing_dates['Date'].dt.year
+
+missing_dates.head(5)
+
+print(missing_dates.head(5))
+
+#Let us check which days and which months have 
+# maximum number of missing days
+print(missing_dates['Day'].value_counts())
+#Sunday has highest number of missed days
+print(missing_dates['Month'].value_counts())
+
+print(pd.crosstab(missing_dates['year'], missing_dates['Day']))
+
+'''
+- Most of the missing days are Sundays
+- Remaining 51 missing days are from Mon-Fri
+- January has seen most of the missing days
+'''
+
+'''
+Conclusions:
+1. We will not make predictions for Sunday
+2. We will make predictions for all weekdays
+3. Discuss with stakeholders for manual adjustments on Sunday and holiday
+'''
+
+### Dealing with Missing Values
+# add rows for missing days
+data_ = pd.DataFrame(data['Number_SKU_Sold'])
+data_.index = pd.DatetimeIndex(data.Date)
+
+print(data_.head(10))
+
+# add missing dates to the data
+idx = pd.date_range('2007-01-01', '2008-12-24')
+data_ = data_.reindex(idx, fill_value=0)
+
+print(data_.head(9))
+
+# extract weekday from the dates
+data_['Date'] = data_.index
+data_['weekday_name'] = data_['Date'].dt.strftime("%A")
+data_.shape
+
+print(data_.shape)
+print(data_.head())
+
+# remove sundays from data
+data_ = data_.loc[data_['weekday_name']!= 'Sunday']
+data_.shape
+
+print(data_.shape)
+
