@@ -337,5 +337,157 @@ result_table = grid_search(parameters_list)
 
 print(result_table.parameters[0])
 
+#training the model
+model = ExponentialSmoothing(np.asarray(train_data['Number_SKU_Sold']), seasonal_periods=6, trend='add', seasonal='add')
+model = model.fit(smoothing_level=0.1, smoothing_slope=0.0001, smoothing_seasonal=0.2)
+    
+# predictions and evaluation
+preds = model.forecast(len(valid_data)) 
+score = rmsle(valid_data['Number_SKU_Sold'], preds)
+
+# results
+print('RMSLE for Holt Winter is:', score)
+
+plt.figure(figsize = (12,8))
+
+plt.plot(train_data.index , train_data['Number_SKU_Sold'], label = 'train')
+plt.plot(valid_data.index , valid_data['Number_SKU_Sold'], label = 'valid')
+plt.plot(valid_data.index , preds, label = 'forecast')
+plt.legend(loc='best')
+
+plt.show()
 
 
+# SARIMA Model
+### Stationarity Test
+# dickey fuller
+from statsmodels.tsa.stattools import adfuller
+
+def adf_test(timeseries):
+    
+    #Perform Dickey-Fuller test:
+    print ('Results of Dickey-Fuller Test:')
+    dftest = adfuller(timeseries, autolag='AIC')
+    dfoutput=pd.Series(dftest[0:4], index=['Test Statistic','p-value','#Lags Used','Number of Observations Used'])
+
+    for key,value in dftest[4].items():
+        dfoutput['Critical Value (%s)'%key] = value
+    print (dfoutput)
+
+print(adf_test(data_['Number_SKU_Sold']))
+
+'''
+If the test statistic is less than the
+critical value, we can reject the null 
+hypothesis (aka the series is stationary)
+. When the test statistic is greater than
+the critical value, we fail to reject
+the null hypothesis (which means the series is not stationary). 
+**Here test statistic is > than critical. Hence series is not stationary**
+'''
+### Making Series Stationary
+
+def inverse_boxcox(y, lambda_):
+    return np.exp(y) if lambda_ == 0 else np.exp(np.log(lambda_ * y + 1) / lambda_)
+
+from scipy import stats
+train_data['Number_SKU_Sold_log'], lambda_ar = stats.boxcox(train_data['Number_SKU_Sold'])
+lambda_ar
+
+train_data['Number_SKU_Sold_log_diff']=train_data['Number_SKU_Sold_log']-train_data['Number_SKU_Sold_log'].shift(6)
+
+
+plt.figure(figsize=(12, 8))
+plt.plot(train_data.index, train_data['Number_SKU_Sold_log_diff'], label='Number SKU Sold Log Diff')
+plt.legend(loc='best')
+plt.title("Stationary Series")
+plt.show()
+
+train_data['Number_SKU_Sold_log_diff_diff'] = train_data['Number_SKU_Sold_log_diff'] - train_data['Number_SKU_Sold_log_diff'].shift(1)
+plt.figure(figsize=(12, 8))
+plt.plot(train_data.index, train_data['Number_SKU_Sold_log_diff_diff'], label='Number SKU Sold Log Diff Diff')
+plt.legend(loc='best')
+plt.title("Stationary Series")
+plt.show()
+
+### Building Sarima Model
+
+from statsmodels.tsa.statespace import sarimax
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+plot_acf(train_data['Number_SKU_Sold_log_diff_diff'].dropna(), lags=25)
+plot_pacf(train_data['Number_SKU_Sold_log_diff_diff'].dropna(), lags=25)
+plt.show()
+
+#training the model
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+model = SARIMAX(train_data['Number_SKU_Sold_log'], seasonal_order=(1, 0, 1, 6), order=(1, 0, 1))
+results = model.fit(maxiter=500)
+
+# predictions and evaluation
+def rmsle(actual, preds):
+    # Assuming actual and preds are Pandas Series of the same length
+    # Ensure no negative values
+    preds = preds.clip(lower=0)
+    return sqrt(mean_squared_log_error(actual, preds)) * 100
+
+
+
+
+
+# Predictions and evaluation
+end = len(train_data) + len(valid_data) - 1  # Adjusted to correct the range
+preds = results.predict(start=0, end=end)  # Use the results object for prediction
+preds_transformed = inverse_boxcox(preds[len(train_data):], lambda_ar)
+print(len(valid_data['Number_SKU_Sold']), len(preds_transformed))
+#preds_transformed = inverse_boxcox(preds[len(train_data):len(train_data) + len(valid_data)], lambda_ar)
+score = rmsle(valid_data['Number_SKU_Sold'], preds_transformed)
+print('RMSLE for SARIMA model Forecasts is', score)
+# Ensure that preds is sliced correctly to match the length of valid_data
+# Assuming preds was obtained from a model prediction and transformed if necessary
+preds_for_valid = preds[-len(valid_data):]
+
+# Now, plot the data
+plt.figure(figsize=(12, 8))
+plt.plot(train_data.index, train_data['Number_SKU_Sold'], label='train')
+plt.plot(valid_data.index, valid_data['Number_SKU_Sold'], label='valid')
+plt.plot(valid_data.index, preds_for_valid, label='preds')
+plt.legend()
+plt.show()
+
+# 6. Building ML Models
+
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+
+# separating features and target variable
+x_train = train_data.drop(['Number_SKU_Sold','weekday_name'], axis=1)
+y_train = train_data['Number_SKU_Sold']
+
+x_valid = valid_data.drop(['Number_SKU_Sold', 'weekday_name'], axis=1)
+y_valid = valid_data['Number_SKU_Sold']
+
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+
+# Normalize features
+scaler = StandardScaler()
+x_train_scaled = scaler.fit_transform(x_train)
+x_valid_scaled = scaler.transform(x_valid)
+
+# Training the model
+model = LinearRegression()
+model.fit(x_train_scaled, y_train)
+
+# Making predictions
+preds = model.predict(x_valid_scaled)
+
+# Calculating RMSLE and other results
+score = rmsle(y_valid, preds)
+print('RMSLE for Linear Regression is', score)
+
+feature_coeff = pd.DataFrame(zip(x_train.columns, model.coef_), columns=['Feature', 'coeff'])
+feature_coeff
+
+plt.bar(feature_coeff['Feature'], feature_coeff['coeff'])
