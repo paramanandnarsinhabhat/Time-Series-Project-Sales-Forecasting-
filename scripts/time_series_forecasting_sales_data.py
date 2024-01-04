@@ -177,3 +177,43 @@ data_['Number_SKU_Sold'] = data_['Number_SKU_Sold'].fillna(method ='ffill')
 
 data_.isnull().sum()
 
+# 4. Feature Extraction and Exploration
+### Decompose Series
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+decomposed_series = seasonal_decompose(data_['Number_SKU_Sold'], period=6)
+
+decomposed_series.plot()
+plt.show()
+
+# considering 26 days a month 
+decomposed_series.seasonal[0:26].plot()
+
+'''
+- Pattern repeats 4 times a month
+- This suggests weekly seasonality in the data
+'''
+
+data_feat = pd.DataFrame({
+    "year": data_['Date'].dt.year,
+    "month": data_['Date'].dt.month,
+    "day": data_['Date'].dt.day,
+    "weekday": data_['Date'].dt.dayofweek,
+    "weekday_name": data_['Date'].dt.strftime("%A"),
+    "dayofyear": data_['Date'].dt.dayofyear,
+    "week": data_['Date'].dt.isocalendar().week,
+    "quarter": data_['Date'].dt.quarter,
+})
+
+
+complete_data = pd.concat([data_feat, data_['Number_SKU_Sold']], axis=1)
+complete_data.head()
+
+print(complete_data.head())
+
+# boxplot for yearly sale
+plt.figure(figsize=(10,6))
+
+sns.boxplot(x=complete_data['year'], y=complete_data['Number_SKU_Sold'], )
+plt.title('Yearly Sales')
+plt.show()
