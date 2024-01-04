@@ -42,4 +42,13 @@ plt.plot(data.index, data['Number_SKU_Sold'], label='Train')
 plt.legend(loc='best')
 plt.show()
 
+'''
+- Clearly there are some very high values in the data. 
+- Could this be around holiday season like new year's? Let us find out
+'''
+
+### Outliers in Data
+print(data['Number_SKU_Sold'].describe())
+
+
 
