@@ -81,3 +81,10 @@ data['Number_SKU_Sold'] = data['Number_SKU_Sold'].fillna(method ='ffill')
 
 data['Number_SKU_Sold'].isnull().sum()
 
+fig, axs = plt.subplots(2, 1,  sharex=True)
+
+axs[0].plot(data_original,) 
+axs[1].plot(data['Number_SKU_Sold'])
+  
+plt.show() 
+
