@@ -217,3 +217,24 @@ plt.figure(figsize=(10,6))
 sns.boxplot(x=complete_data['year'], y=complete_data['Number_SKU_Sold'], )
 plt.title('Yearly Sales')
 plt.show()
+
+# boxplot for week's sales
+plt.figure(figsize=(10,6))
+
+sns.boxplot(x=complete_data['weekday_name'], y=complete_data['Number_SKU_Sold'], )
+plt.title('Weekly Sales Trend')
+plt.show()
+
+# boxplot for monthly sales
+plt.figure(figsize=(10,6))
+
+sns.boxplot(x=complete_data['month'], y=complete_data['Number_SKU_Sold'], )
+plt.title('Montly Sales Trend')
+plt.show()
+
+'''
+- Except for a few high sales in 2007, sales were comparatively higher in 2008
+- All weekdays have similar trend on sales
+- Average sales are higher towards the end of the year
+'''
+
