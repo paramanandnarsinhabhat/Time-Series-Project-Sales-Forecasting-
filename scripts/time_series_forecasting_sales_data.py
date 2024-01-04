@@ -168,3 +168,12 @@ data_.shape
 
 print(data_.shape)
 
+data_original = data['Number_SKU_Sold']
+data_['Number_SKU_Sold'] = data_['Number_SKU_Sold'].apply(lambda x: np.nan if x == 0.0 else x)
+data_.isnull().sum()
+
+# impute missing values
+data_['Number_SKU_Sold'] = data_['Number_SKU_Sold'].fillna(method ='ffill')
+
+data_.isnull().sum()
+
