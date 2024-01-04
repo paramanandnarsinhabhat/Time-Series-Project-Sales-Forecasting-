@@ -286,5 +286,56 @@ score = rmsle(valid_data['Number_SKU_Sold'], preds)
 # results
 print('RMSLE for Holt Winter is:', score)
 
+## Grid search
+from itertools import product
+from tqdm import tqdm_notebook
+
+# setting initial values and some bounds for them
+level = [0.1, 0.3, 0.5, 0.8]
+smoothing_slope = [0.0001, 0.001, 0.05] 
+smoothing_seasonal = [0.2, 0.4, 0.6]
+
+
+# creating list with all the possible combinations of parameters
+parameters = product(level, smoothing_slope, smoothing_seasonal)
+parameters_list = list(parameters)
+len(parameters_list)
+
+print(parameters_list)
+
+def grid_search(parameters_list):
+    
+    results = []
+    best_error_ = float("inf")
+
+    for param in tqdm_notebook(parameters_list):
+        #training the model
+        model = ExponentialSmoothing(np.asarray(train_data['Number_SKU_Sold']), seasonal_periods=6, trend='add', seasonal='add')
+        model = model.fit(smoothing_level=param[0], smoothing_slope=param[1], smoothing_seasonal=param[2])
+
+        # predictions and evaluation
+        preds = model.forecast(len(valid_data)) 
+        score = rmsle(valid_data['Number_SKU_Sold'], preds)
+        
+        # saving best model, rmse and parameters
+        if score < best_error_:
+            best_model = model
+            best_error_ = score
+            best_param = param
+        results.append([param, score])
+        
+    result_table = pd.DataFrame(results)
+    result_table.columns = ['parameters', 'RMSLE']
+    
+    
+    # sorting in ascending order, the lower rmse is - the better
+    result_table = result_table.sort_values(by='RMSLE', ascending=True).reset_index(drop=True)
+    
+    return result_table
+
+result_table = grid_search(parameters_list)
+
+print(result_table.parameters[0])
+
 
 
