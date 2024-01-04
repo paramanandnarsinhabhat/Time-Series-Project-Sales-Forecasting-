@@ -50,5 +50,34 @@ plt.show()
 ### Outliers in Data
 print(data['Number_SKU_Sold'].describe())
 
+#Print
+print('Value at 95th percentile:', (np.percentile(data['Number_SKU_Sold'], 95)))
+print('Value at 97th percentile:', (np.percentile(data['Number_SKU_Sold'], 97)))
+print('Value at 99th percentile:', (np.percentile(data['Number_SKU_Sold'], 99)))
 
+sns.boxplot(data['Number_SKU_Sold'])
+plt.show()  # This line will display the plot
+
+#IQR for outliers
+IQR = (np.percentile(data['Number_SKU_Sold'], 75)) - (np.percentile(data['Number_SKU_Sold'], 25))
+whisker_val = (np.percentile(data['Number_SKU_Sold'], 75)) + (1.5*(IQR))
+
+print(whisker_val)
+
+# number of values greater than whisker value
+print(data.loc[data['Number_SKU_Sold']>whisker_val].shape)
+
+#get values
+print(data.loc[data['Number_SKU_Sold']>whisker_val])
+
+data_original = data['Number_SKU_Sold'] 
+
+data['Number_SKU_Sold'] = data['Number_SKU_Sold'].apply(lambda x: np.nan if x > whisker_val else x)
+
+data['Number_SKU_Sold'].isnull().sum()
+
+# removing outliers using ffill
+data['Number_SKU_Sold'] = data['Number_SKU_Sold'].fillna(method ='ffill')
+
+data['Number_SKU_Sold'].isnull().sum()
 
