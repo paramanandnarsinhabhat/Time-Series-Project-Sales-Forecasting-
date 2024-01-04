@@ -20,5 +20,9 @@ print(data.shape)
 #Check the first few number of rows 
 print(data.head())
 
+#Check the last few no of rows
+print(data.tail())
+
+
 
 
