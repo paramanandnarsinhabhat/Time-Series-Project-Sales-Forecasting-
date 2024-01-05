@@ -491,3 +491,5 @@ feature_coeff = pd.DataFrame(zip(x_train.columns, model.coef_), columns=['Featur
 feature_coeff
 
 plt.bar(feature_coeff['Feature'], feature_coeff['coeff'])
+
+
